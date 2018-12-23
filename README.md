@@ -1,4 +1,4 @@
-# smart-thing
+# ledmatrix
 A simple EasyQ controlled power line outlet.
 
 
@@ -13,8 +13,8 @@ to setup your environment.
 source esp-env/nonos/activate.sh
 
 cd esp-env/nonos/sdk/
-git clone git@github.com:easyqiot/smart-thing.git
-cd smart-thing
+git clone git@github.com:easyqiot/ledmatrix.git
+cd ledmatrix
 bash ./gen_misc.sh
 ```
 
