@@ -19,19 +19,45 @@
 #include "debug.h"
 
 
-#define STATUS_INTERVAL		200	
 #define VERSION				"2.2.1"
 
 LOCAL EasyQSession eq;
 
-enum direction {
-	MOTOR_FORWARD,
-	MOTOR_BACKWARD
-};
+#define T	200
+LOCAL ETSTimer t;
+LOCAL uint8_t tc = 0;
+LOCAL int ta = 0;
+void tf(void *args) {
+	int i, x;
+	display_clear();
+	for (i = 3; i >= 0; i--) {
+		x = i * 4 - ta % 4;
+		display_char(tc + i, x);
+		if (x > 0) {
+			display_dot(x-1, 7, 1);
+		}
+	}
+	display_draw();
+	ta++;
+	if (ta % 4 == 0) {
+		tc++;
+		if (tc >= 90) {
+			os_timer_disarm(&t);
+			return;
+		}
+	}
+	os_timer_arm(&t, T, 0);
+}
+void start_t() {
+	tc = 65;
+	ta = 0;
+	os_timer_disarm(&t);
+	os_timer_setfn(&t, (os_timer_func_t*) tf, 0);
+	os_timer_arm(&t, T, 0);
+}
 
-LOCAL enum direction current_direction;
 
-void
+void ICACHE_FLASH_ATTR
 fota_report_status(const char *q) {
 	char str[50];
 	float vdd = system_get_vdd33() / 1024.0;
@@ -47,26 +73,18 @@ fota_report_status(const char *q) {
 
 
 void ICACHE_FLASH_ATTR
-motor_stopped(const char* msg) {
-	GPIO_OUTPUT_SET(GPIO_ID_PIN(EN_NUM), 1);
-}
-
-void ICACHE_FLASH_ATTR
-motor_update_by_message(const char* msg) {
-	GPIO_OUTPUT_SET(GPIO_ID_PIN(EN_NUM), 0);
-	int steps = atoi(msg);
-	//uint32_t steps = motor_change_direction(atoi(msg));
-	motor_rotate(steps);
-}
-
-
-void ICACHE_FLASH_ATTR
 easyq_message_cb(void *arg, const char *queue, const char *msg, 
 		uint16_t message_len) {
-	//INFO("EASYQ: Message: %s From: %s\r\n", msg, queue);
 
-	if (strcmp(queue, MOTOR_QUEUE) == 0) { 
-		motor_update_by_message(msg);
+	if (strcmp(queue, DISPLAY_DIGIT_QUEUE) == 0) { 
+		uint8_t n = atoi(msg);
+		display_number(n);
+		display_draw();
+	}
+	else if (strcmp(queue, DISPLAY_CHAR_QUEUE) == 0) { 
+		INFO("%d %d\r\n", (uint8_t)msg[0], (uint8_t)msg[1]);
+		display_char((uint8_t)msg[0], (uint8_t)msg[1]);
+		display_draw();
 	}
 	else if (strcmp(queue, FOTA_QUEUE) == 0) {
 		if (msg[0] == 'R') {
@@ -77,6 +95,10 @@ easyq_message_cb(void *arg, const char *queue, const char *msg,
 		else if (msg[0] == 'I') {
 			fota_report_status(FOTA_STATUS_QUEUE);
 		}
+		else if (msg[0] == 'T') {
+			start_t();
+		}
+
 
 	}
 }
@@ -85,9 +107,10 @@ easyq_message_cb(void *arg, const char *queue, const char *msg,
 void ICACHE_FLASH_ATTR
 easyq_connect_cb(void *arg) {
 	INFO("EASYQ: Connected to %s:%d\r\n", eq.hostname, eq.port);
-	INFO("\r\n***** Smart Outlet "VERSION"****\r\n");
-	const char * queues[] = {MOTOR_QUEUE, FOTA_QUEUE};
-	easyq_pull_all(&eq, queues, 2);
+	INFO("\r\n***** DHT22 "VERSION"****\r\n");
+	const char * queues[] = {DISPLAY_DIGIT_QUEUE, DISPLAY_CHAR_QUEUE, 
+		FOTA_QUEUE};
+	easyq_pull_all(&eq, queues, 3);
 }
 
 
@@ -120,25 +143,6 @@ void user_init(void) {
     uart_init(BIT_RATE_115200, BIT_RATE_115200);
     os_delay_us(60000);
 
-	// Motor 
-	PIN_FUNC_SELECT(DIR_MUX, DIR_FUNC);
-	PIN_PULLUP_EN(DIR_MUX);
-	GPIO_OUTPUT_SET(GPIO_ID_PIN(DIR_NUM), 0);
-
-	PIN_FUNC_SELECT(STEP_MUX, STEP_FUNC);
-	PIN_PULLUP_EN(STEP_MUX);
-	GPIO_OUTPUT_SET(GPIO_ID_PIN(STEP_NUM), 0);
-	
-	PIN_FUNC_SELECT(EN_MUX, EN_FUNC);
-	PIN_PULLUP_EN(EN_MUX);
-	GPIO_OUTPUT_SET(GPIO_ID_PIN(EN_NUM), 1);
-
-    //GPIO_REG_WRITE(
-	//		GPIO_PIN_ADDR(GPIO_ID_PIN(RELAY1_NUM)), 
-	//		GPIO_REG_READ(GPIO_PIN_ADDR(GPIO_ID_PIN(RELAY1_NUM))) 
-	//		| GPIO_PIN_PAD_DRIVER_SET(GPIO_PAD_DRIVER_ENABLE)
-	//	); //open drain;
-		
 	EasyQError err = easyq_init(&eq, EASYQ_HOSTNAME, EASYQ_PORT, EASYQ_LOGIN);
 	if (err != EASYQ_OK) {
 		ERROR("EASYQ INIT ERROR: %d\r\n", err);
@@ -148,8 +152,8 @@ void user_init(void) {
 	eq.ondisconnect = easyq_disconnect_cb;
 	eq.onconnectionerror = easyq_connection_error_cb;
 	eq.onmessage = easyq_message_cb;
-	motor_set_stop_callback(motor_stopped);
-	motor_init();
+
+	display_init();
     WIFI_Connect(WIFI_SSID, WIFI_PSK, wifi_connect_cb);
     INFO("System started ...\r\n");
 }
