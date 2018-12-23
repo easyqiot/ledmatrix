@@ -23,38 +23,38 @@
 
 LOCAL EasyQSession eq;
 
-#define T	200
-LOCAL ETSTimer t;
-LOCAL uint8_t tc = 0;
-LOCAL int ta = 0;
-void tf(void *args) {
-	int i, x;
-	display_clear();
-	for (i = 3; i >= 0; i--) {
-		x = i * 4 - ta % 4;
-		display_char(tc + i, x);
-		if (x > 0) {
-			display_dot(x-1, 7, 1);
-		}
-	}
-	display_draw();
-	ta++;
-	if (ta % 4 == 0) {
-		tc++;
-		if (tc >= 90) {
-			os_timer_disarm(&t);
-			return;
-		}
-	}
-	os_timer_arm(&t, T, 0);
-}
-void start_t() {
-	tc = 65;
-	ta = 0;
-	os_timer_disarm(&t);
-	os_timer_setfn(&t, (os_timer_func_t*) tf, 0);
-	os_timer_arm(&t, T, 0);
-}
+//#define T	200
+//LOCAL ETSTimer t;
+//LOCAL uint8_t tc = 0;
+//LOCAL int ta = 0;
+//void tf(void *args) {
+//	int i, x;
+//	display_clear();
+//	for (i = 3; i >= 0; i--) {
+//		x = i * 4 - ta % 4;
+//		display_char(tc + i, x);
+//		if (x > 0) {
+//			display_dot(x-1, 7, 1);
+//		}
+//	}
+//	display_draw();
+//	ta++;
+//	if (ta % 4 == 0) {
+//		tc++;
+//		if (tc >= 122) {
+//			os_timer_disarm(&t);
+//			return;
+//		}
+//	}
+//	os_timer_arm(&t, T, 0);
+//}
+//void start_t() {
+//	tc = 32;
+//	ta = 0;
+//	os_timer_disarm(&t);
+//	os_timer_setfn(&t, (os_timer_func_t*) tf, 0);
+//	os_timer_arm(&t, T, 0);
+//}
 
 
 void ICACHE_FLASH_ATTR
@@ -82,9 +82,7 @@ easyq_message_cb(void *arg, const char *queue, const char *msg,
 		display_draw();
 	}
 	else if (strcmp(queue, DISPLAY_CHAR_QUEUE) == 0) { 
-		INFO("%d %d\r\n", (uint8_t)msg[0], (uint8_t)msg[1]);
-		display_char((uint8_t)msg[0], (uint8_t)msg[1]);
-		display_draw();
+		display_string(msg, message_len);
 	}
 	else if (strcmp(queue, FOTA_QUEUE) == 0) {
 		if (msg[0] == 'R') {
@@ -95,11 +93,9 @@ easyq_message_cb(void *arg, const char *queue, const char *msg,
 		else if (msg[0] == 'I') {
 			fota_report_status(FOTA_STATUS_QUEUE);
 		}
-		else if (msg[0] == 'T') {
-			start_t();
-		}
-
-
+		//else if (msg[0] == 'T') {
+		//	start_t();
+		//}
 	}
 }
 
