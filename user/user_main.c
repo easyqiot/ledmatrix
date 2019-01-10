@@ -25,6 +25,8 @@ static EasyQSession eq;
 static Params params;
 
 
+#define UPDATE_RELAY(on) GPIO_OUTPUT_SET(GPIO_ID_PIN(RELAY_NUM), on)
+
 
 void ICACHE_FLASH_ATTR
 fota_report_status(const char *q) {
@@ -48,6 +50,9 @@ easyq_message_cb(void *arg, const char *queue, const char *msg,
 	if (strcmp(queue, DISPLAY_CHAR_QUEUE) == 0) { 
 		display_string(msg, message_len);
 	}
+	else if (strcmp(queue, RELAY_QUEUE) == 0) { 
+		UPDATE_RELAY(os_strncmp(msg, "on", 2) == 0);
+	}
 	else if (strcmp(queue, FOTA_QUEUE) == 0) {
 		if (msg[0] == 'R') {
 			INFO("Rebooting to FOTA ROM\r\n");
@@ -65,8 +70,8 @@ void ICACHE_FLASH_ATTR
 easyq_connect_cb(void *arg) {
 	INFO("EASYQ: Connected to %s:%d\r\n", eq.hostname, eq.port);
 	INFO("\r\n***** "DEVICE_NAME" "VERSION"****\r\n");
-	const char * queues[] = {DISPLAY_CHAR_QUEUE, FOTA_QUEUE};
-	easyq_pull_all(&eq, queues, 2);
+	const char * queues[] = {DISPLAY_CHAR_QUEUE, RELAY_QUEUE, FOTA_QUEUE};
+	easyq_pull_all(&eq, queues, 3);
 }
 
 
@@ -113,6 +118,10 @@ void user_init(void) {
     uart_init(BIT_RATE_115200, BIT_RATE_115200);
     os_delay_us(60000);
 
+	PIN_FUNC_SELECT(RELAY_MUX, RELAY_FUNC);
+	PIN_PULLUP_DIS(RELAY_MUX);
+	GPIO_OUTPUT_SET(GPIO_ID_PIN(RELAY_NUM), 0);
+	
 	bool ok = params_load(&params);
 	if (!ok) {
 		ERROR("Cannot load Params\r\n");

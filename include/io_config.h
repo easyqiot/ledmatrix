@@ -10,6 +10,7 @@
 #define FOTA_QUEUE				DEVICE_NAME":fota"
 #define FOTA_STATUS_QUEUE		DEVICE_NAME":fota:status"
 #define DISPLAY_CHAR_QUEUE		DEVICE_NAME
+#define RELAY_QUEUE				DEVICE_NAME":r"
 
 /* GPIO */
 
@@ -23,6 +24,10 @@
 #define CLOCK_NUM			14
 #define CLOCK_FUNC			FUNC_GPIO14
 
+// Relay
+#define RELAY_MUX			PERIPHS_IO_MUX_GPIO5_U
+#define RELAY_NUM			5
+#define RELAY_FUNC			FUNC_GPIO5
 
 #endif
 
