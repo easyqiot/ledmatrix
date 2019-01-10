@@ -2,16 +2,16 @@
 #include <osapi.h>
 
 
-#define CAROUSEL_INTERVAL	300
+#define CAROUSEL_INTERVAL	180
 
-LOCAL ETSTimer _timer;
-LOCAL uint8_t _ticks = 0;
+static ETSTimer _timer;
+static uint8_t _ticks = 0;
 
-LOCAL char _buffer[32] = {
+static char _buffer[32] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
-LOCAL uint8_t _length = 0;
+static uint8_t _length = 0;
 
 
 void carousel_timer_func(void *args) {

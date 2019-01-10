@@ -5,18 +5,6 @@
 #include "io_config.h"
 
 
-/* GPIO */
-
-// DATA PIN
-#define DATA_MUX			PERIPHS_IO_MUX_MTCK_U	
-#define DATA_NUM			13
-#define DATA_FUNC			FUNC_GPIO13
-
-// Clock PIN
-#define CLOCK_MUX			PERIPHS_IO_MUX_MTMS_U	
-#define CLOCK_NUM			14
-#define CLOCK_FUNC			FUNC_GPIO14
-
 #define DISPLAY_INTENSITY	1
 
 
@@ -27,7 +15,7 @@
 #define HIGH			1
 
 
-LOCAL uint8_t display_buffer[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+static uint8_t display_buffer[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
 
 void ICACHE_FLASH_ATTR
@@ -108,34 +96,6 @@ display_init() {
 	GPIO_OUTPUT_SET(GPIO_ID_PIN(CLOCK_NUM), 1);
 }
 
-
-
-LOCAL uint8_t digitmap[10][5] = {
-	{7, 5, 5, 5, 7},  // 0
-	{7, 2, 2, 3, 2},  // 1
-	{7, 1, 7, 4, 7},  // 2
-	{7, 4, 7, 4, 7},  // 3
-	{4, 4, 7, 5, 5},  // 4
-	{7, 4, 7, 1, 7},  // 5
-	{7, 5, 7, 1, 7},  // 6
-	{4, 4, 4, 4, 7},  // 7
-	{7, 5, 7, 5, 7},  // 8
-	{7, 4, 7, 5, 7},  // 9
-};
-
-
-void ICACHE_FLASH_ATTR
-display_number(uint8_t n) {
-	int i;
-	if (n < 0 || n > 99) {
-		return;
-	}
-	uint8_t d0 = n % 10;
-	uint8_t d1 = n / 10;
-	for (i = 0; i < 5; i++) {
-		display_buffer[i] = (digitmap[d0][i] << 4) | (d1? digitmap[d1][i]: 0);
-	}
-}
 
 
 LOCAL uint8_t charmap[91][5] = {
