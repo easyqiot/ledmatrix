@@ -2,7 +2,7 @@
 #include <osapi.h>
 
 
-#define CAROUSEL_INTERVAL	180
+#define CAROUSEL_INTERVAL	100
 
 static ETSTimer _timer;
 static uint8_t _ticks = 0;
@@ -21,9 +21,9 @@ void carousel_timer_func(void *args) {
 	for (i = 3; i >= 0; i--) {
 		x = i * 4 - _ticks % 4;
 		display_char(_buffer[(char_index + i) % _length], x);
-		//if (x > 0) {
-		//	display_dot(x-1, 7, 1);
-		//}
+		if (x > 0) {
+			display_dot(x-1, 7, 1);
+		}
 	}
 	display_draw();
 	if (char_index == _length) {
